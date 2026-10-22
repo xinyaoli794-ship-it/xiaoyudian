@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 自适应图标底色：与图标本身的深紫背景一致 -->
+    <color name="icon_bg">#FF3B314D</color>
+</resources>
