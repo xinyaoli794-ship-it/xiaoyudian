@@ -178,6 +178,11 @@ public final class Str {
         p("lang_hint", "之后可在「设置 › 语言」中随时更改", "之後可在「設定 › 語言」中隨時變更",
                 "You can change this later in Settings › Language", "あとで「設定 › 言語」から変更できます",
                 "나중에 ‘설정 › 언어’에서 변경할 수 있습니다");
+        p("toast_deleted", "已删除", "已刪除", "Deleted", "削除しました", "삭제했습니다");
+        p("toast_restored", "已还原", "已還原", "Restored", "復元しました", "복원했습니다");
+        p("toast_purged", "已彻底删除", "已徹底刪除", "Deleted permanently", "完全に削除しました", "완전히 삭제했습니다");
+        p("toast_cleared", "已清空", "已清空", "Emptied", "空にしました", "비웠습니다");
+        p("toast_auto_backup", "已自动备份", "已自動備份", "Auto backup done", "自動バックアップ完了", "자동 백업 완료");
         p("back", "返回", "返回", "Back", "戻る", "뒤로");
         p("copied", "邮箱已复制", "信箱已複製", "Email copied", "メールをコピーしました", "이메일을 복사했습니다");
         p("current_version", "当前版本：", "目前版本：", "Version: ", "バージョン：", "버전: ");

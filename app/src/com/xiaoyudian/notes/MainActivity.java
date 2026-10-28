@@ -150,7 +150,7 @@ public class MainActivity extends Activity implements ListScreen.Host, DrawerPan
             SettingsScreen.reopen = false;
             openSettings(true);   // 同步、无淡入：第一帧就是设置页，不会透出主界面
         }
-        playThemeTransition();    // 主题/字号切换后的颜色过渡
+            // 不再叠加旧快照：叠层会在设置页上造成"按钮闪一下"的观感
     }
 
     private static boolean crashLogInstalled = false;
@@ -402,7 +402,7 @@ public class MainActivity extends Activity implements ListScreen.Host, DrawerPan
         removeStale(EditorScreen.class);
         final EditorScreen e = new EditorScreen(this, noteId, folderId, this);
         editor = e;
-        e.setInsets(insetTop, Math.max(insetBottom, imeBottom), imeBottom);
+        e.setInsets(insetTop, insetBottom, 0);   // 进度：不继承搜索页键盘的高度
         normalize(e);
         e.setTranslationY(Ui.dp(46));
         e.setAlpha(0f);
@@ -464,12 +464,12 @@ public class MainActivity extends Activity implements ListScreen.Host, DrawerPan
     @Override
     public void move(final Note n) {
         List<Folder> folders = Db.get(this).folders();
-        String[] items = new String[folders.size() + 1];
+        String[] items = new String[folders.size()];
         final long[] ids = new long[folders.size() + 1];
-        items[0] = Str.s("uncategorized");
+        // 不再提供“未分类”入口：便签默认就在全部便签里
         ids[0] = 0L;
         for (int i = 0; i < folders.size(); i++) {
-            items[i + 1] = folders.get(i).name;
+            items[i] = folders.get(i).name;
             ids[i + 1] = folders.get(i).id;
         }
         Runnable[] acts = new Runnable[items.length];
@@ -492,6 +492,7 @@ public class MainActivity extends Activity implements ListScreen.Host, DrawerPan
                 new Runnable() {
                     @Override public void run() {
                         Db.get(MainActivity.this).softDelete(n.id);
+        toast(Str.s("toast_deleted"));
                         list.reload(true);
                         drawer.rebuild();
                     }
@@ -540,6 +541,7 @@ public class MainActivity extends Activity implements ListScreen.Host, DrawerPan
                 new Runnable() {
                     @Override public void run() {
                         Db.get(MainActivity.this).softDelete(s.noteId);
+                toast(Str.s("toast_deleted"));
                         editor = null;
                         contentHost.removeView(s);
                         list.setScaleX(1f);
@@ -775,6 +777,22 @@ public class MainActivity extends Activity implements ListScreen.Host, DrawerPan
     public void applyFont(int level) {
         themeSnapshot = captureScreen();
         recreate();
+    }
+
+    /** 新主题从开关位置圆形扩散铺满全屏 */
+    private void playReveal() {
+        try {
+            int w = root.getWidth(), h = root.getHeight();
+            if (w <= 0 || h <= 0) return;
+            float r = (float) Math.hypot(w, h);
+            int cx = revealX > 0 ? revealX : w / 2;
+            int cy = revealY > 0 ? revealY : h / 3;
+            android.animation.Animator a = android.view.ViewAnimationUtils
+                    .createCircularReveal(root, cx, cy, 0f, r);
+            a.setDuration(420);
+            a.setInterpolator(Ui.EASE);
+            a.start();
+        } catch (Throwable ignored) { }
     }
 
     /** 把当前画面抓成位图，重建后叠在上面淡出，做"颜色缓慢过渡" */
@@ -1178,6 +1196,10 @@ public class MainActivity extends Activity implements ListScreen.Host, DrawerPan
         Toast.makeText(this, s, Toast.LENGTH_SHORT).show();
     }
 
+    public static int revealX = 0, revealY = 0;
+    private static int keepPos = -1, keepOffset = 0;
+    private boolean revealPending = false;
+
     private boolean backupChecked;
 
     @Override
@@ -1187,6 +1209,11 @@ public class MainActivity extends Activity implements ListScreen.Host, DrawerPan
             backupChecked = true;
             Backup.maybeAuto(this, false);
         if (!Settings.langChosen(this)) { showFirstRunLang(); return; }
+        if (keepPos >= 0) {
+            try { list.restoreScroll(keepPos, keepOffset); } catch (Throwable ignored) { }
+            keepPos = -1;
+        }
+        if (revealPending) { revealPending = false; playReveal(); }
         }
     }
 

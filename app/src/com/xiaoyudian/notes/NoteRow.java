@@ -65,7 +65,7 @@ public class NoteRow extends FrameLayout {
         addView(actions, alp);
 
         int[][] spec = {
-                {Ic.PIN, 0xFFC9D7FF, 0x1AFFFFFF},
+        {Ic.UP, 0xFFC9D7FF, 0x1AFFFFFF},
                 {Ic.FOLDER, 0xFFC9D7FF, 0x1AFFFFFF},
                 {Ic.TRASH, 0xFFFF9E9E, 0x1AFF7A7A},
         };
@@ -98,7 +98,7 @@ public class NoteRow extends FrameLayout {
     public Note bind(Note n, boolean detailed) {
         note = n;
         card.bind(n, detailed);
-        icons[0].setKind(Ic.PIN);
+        icons[0].setKind(Ic.UP);
         labels[0].setText(n.pinned ? Str.s("unpin") : Str.s("pin"));
         collapse(false);
         return n;

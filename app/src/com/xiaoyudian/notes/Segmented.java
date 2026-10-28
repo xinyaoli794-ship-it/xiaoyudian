@@ -146,7 +146,7 @@ public class Segmented extends FrameLayout {
         FrostDrawable(float radius) {
             this.radius = radius;
             border.setStyle(Paint.Style.STROKE);
-            border.setStrokeWidth(Math.max(1f, Ui.dp(0.75f)));
+            border.setStrokeWidth(Math.max(1f, Ui.dp(0.6f)));
         }
 
         @Override
@@ -160,10 +160,18 @@ public class Segmented extends FrameLayout {
         public void draw(Canvas c) {
             rect.set(getBounds());
             float rr = radius < 0 ? Math.min(rect.width(), rect.height()) / 2f : radius;
-            fill.setColor(Ui.blend(Ui.DARK ? 0xFF1C1C20 : 0xFFFFFFFF, Ui.ACCENT, Ui.DARK ? 0.30f : 0.18f));
+            fill.setColor(Ui.shade(Ui.blend(Ui.DARK ? 0xFF1C1C20 : 0xFFFFFFFF, Ui.ACCENT, Ui.DARK ? 0.26f : 0.16f), 1.06f));
             c.drawRoundRect(rect, rr, rr, fill);
             c.drawRoundRect(rect, rr, rr, sheen);
-            border.setColor(Ui.DARK ? 0x8CFFFFFF : 0x38000000);
+            border.setColor(Ui.DARK ? 0x33FFFFFF : 0x16000000);
+            // 亮边带厚度 + 内侧折射高光
+            border.setColor(Ui.DARK ? 0x59FFFFFF : 0x40FFFFFF);
+            border.setStrokeWidth(Math.max(1f, Ui.dp(1f)));
+            android.graphics.RectF inner = new android.graphics.RectF(rect);
+            inner.inset(0.6f, 0.6f);
+            c.drawRoundRect(inner, rr, rr, border);
+            border.setStrokeWidth(Math.max(1f, Ui.dp(0.6f)));
+            border.setColor(Ui.DARK ? 0x33FFFFFF : 0x16000000);
             c.drawRoundRect(rect, rr, rr, border);
         }
 

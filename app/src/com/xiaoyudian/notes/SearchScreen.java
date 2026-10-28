@@ -40,6 +40,7 @@ public class SearchScreen extends FrameLayout {
         this.host = host;
         setWillNotDraw(false);
 
+        setBackgroundColor(Ui.BG);
         col = new LinearLayout(c);
         col.setOrientation(LinearLayout.VERTICAL);
         addView(col, new FrameLayout.LayoutParams(-1, -1));
@@ -75,6 +76,7 @@ public class SearchScreen extends FrameLayout {
         bar.addView(input, ilp);
 
         list = new ListView(c);
+        list.setBackgroundColor(Ui.BG);
         list.setDivider(null);
         list.setDividerHeight(Ui.dpi(2));
         list.setSelector(new android.graphics.drawable.ColorDrawable(0));

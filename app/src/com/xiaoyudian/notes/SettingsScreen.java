@@ -188,7 +188,7 @@ public class SettingsScreen extends FrameLayout {
             int base = Settings.accent(c) == 0 ? 0xFF7FD1C1 : Settings.accent(c);
             theme.addView(new BrightnessBar(c, base, Settings.accentValue(c),
                     new BrightnessBar.OnChange() {
-                        @Override public void onColor(int color, float value) {
+                        @Override public void onColor(int color, float value, boolean done) {
                             Settings.setAccent(getContext(), color);
                             Settings.setAccentValue(getContext(), value);
                             SettingsScreen.reopen = true;

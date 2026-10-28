@@ -252,11 +252,17 @@ public class EditorScreen extends FrameLayout {
         input.setBackground(null);
         input.setTextSize(17f);
         input.setTextColor(Ui.TEXT);
-        input.setHint(Str.s("editor_hint"));
+        android.text.SpannableString hint = new android.text.SpannableString(Str.s("editor_hint"));
+        hint.setSpan(new android.text.style.AbsoluteSizeSpan(Ui.dpi(15)), 0, hint.length(),
+                android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+        input.setHint(hint);
         input.setHintTextColor(Ui.alpha(Ui.TEXT, 0.30f));
         input.setGravity(Gravity.TOP | Gravity.START);
         input.setPadding(Ui.dpi(22), Ui.dpi(4), Ui.dpi(22), Ui.dpi(10));
-        input.setLineSpacing(Ui.dp(5f), 1f);
+        input.setLineSpacing(Ui.dp(4f), 1.06f);
+        input.setLetterSpacing(-0.022f);
+        input.getPaint().setSubpixelText(true);
+        input.getPaint().setLinearText(false);
         input.setInputType(android.text.InputType.TYPE_CLASS_TEXT
                 | android.text.InputType.TYPE_TEXT_FLAG_MULTI_LINE
                 | android.text.InputType.TYPE_TEXT_FLAG_CAP_SENTENCES);
@@ -347,22 +353,6 @@ public class EditorScreen extends FrameLayout {
         if (n != null) {
             imgPaths.addAll(Db.get(c).atts(noteId));
             lastAttCount = imgPaths.size();
-            input.setText(n.content == null ? "" : n.content);
-            Editable e = input.getText();
-            if (n.spans != null && !n.spans.isEmpty()) Rich.restore(e, n.spans);
-            attachInlineSpans();
-            if (countPlaceholders() == 0 && !imgPaths.isEmpty()) {
-                StringBuilder rb = new StringBuilder();
-                for (int i = 0; i < imgPaths.size(); i++) rb.append('\n').append(PH).append('\n');
-                e.append(rb);
-                attachInlineSpans();
-            }
-            input.setSelection(0);
-            input.post(new Runnable() {
-                @Override public void run() { input.scrollTo(0, 0); }
-            });
-            originalText = e.toString();
-            originalSpans = Rich.serialize(e);
             updatedAt = n.updated;
             if (n.folderName != null && !n.folderName.isEmpty()) {
                 folderName.setText(n.folderName);
@@ -373,14 +363,45 @@ public class EditorScreen extends FrameLayout {
                 locName.setText(Ui.cityOnly(n.locName));
                 locRow.setVisibility(VISIBLE);
             }
+            // 正文延后一帧再填充：编辑页先出现，长文本不会卡住入场
+            final Note nn = n;
+            post(new Runnable() {
+                @Override public void run() {
+                    applying = true;
+                    try {
+                        input.setText(nn.content == null ? "" : nn.content);
+                        Editable e = input.getText();
+                        if (nn.spans != null && !nn.spans.isEmpty()) Rich.restore(e, nn.spans);
+                        attachInlineSpans();
+                        if (countPlaceholders() == 0 && !imgPaths.isEmpty()) {
+                            StringBuilder rb = new StringBuilder();
+                            for (int i = 0; i < imgPaths.size(); i++) rb.append('\n').append(PH).append('\n');
+                            e.append(rb);
+                            attachInlineSpans();
+                        }
+                        input.setSelection(0);
+                        originalText = e.toString();
+                        originalSpans = Rich.serialize(e);
+                    } catch (Throwable ignored) { }
+                    applying = false;
+                    refreshChecks();
+                    applyParaSpacing();
+                    refreshStatus();
+                    history.clear();
+                    history.add(currentSnap());
+                    histIndex = 0;
+                    refreshUndo();
+                    fitText();
+                    input.scrollTo(0, 0);
+                }
+            });
         } else {
             updatedAt = System.currentTimeMillis();
+            refreshStatus();
+            history.add(currentSnap());
+            histIndex = 0;
+            refreshUndo();
         }
-        refreshStatus();
-
-        history.add(currentSnap());
-        histIndex = 0;
-        refreshUndo();
 
         input.addTextChangedListener(new TextWatcher() {
             @Override public void beforeTextChanged(CharSequence s, int a, int b, int c) { }
@@ -515,6 +536,7 @@ public class EditorScreen extends FrameLayout {
     }
 
     private void updateFormatButtons() {
+        refreshChecks();
         if (fmtBox[0] == null) return;
         try {
             int a = Math.max(0, input.getSelectionStart());
@@ -644,6 +666,42 @@ public class EditorScreen extends FrameLayout {
             return;
         }
         e.insert(ls, "☐ ");
+    }
+
+    /** ☑ 之后整行加删除线并变浅；☐ 则清除 */
+    static class CheckStrike extends android.text.style.CharacterStyle {
+        @Override public void updateDrawState(android.text.TextPaint tp) {
+            tp.setStrikeThruText(true);
+            tp.setColor(Ui.alpha(Ui.TEXT, 0.42f));
+        }
+    }
+
+    private boolean calmCheck;
+
+    private void refreshChecks() {
+        if (calmCheck) return;
+        Editable e = input.getText();
+        if (e == null) return;
+        calmCheck = true;
+        try {
+            int i = 0;
+            while (i < e.length()) {
+                int ls = i;
+                int le = e.toString().indexOf('\n', ls);
+                if (le < 0) le = e.length();
+                if (ls < e.length()) {
+                    char c0 = e.charAt(ls);
+                    int from = Math.min(le, ls + 2);   // 跳过 "☑ "
+                    CheckStrike[] old = e.getSpans(ls, le, CheckStrike.class);
+                    for (CheckStrike s : old) e.removeSpan(s);
+                    if (c0 == '☑' && from < le) {
+                        e.setSpan(new CheckStrike(), from, le, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                    }
+                }
+                i = le + 1;
+            }
+        } catch (Throwable ignored) { }
+        calmCheck = false;
     }
 
     private void toggleCheckboxChar(int off) {
@@ -951,6 +1009,7 @@ public class EditorScreen extends FrameLayout {
         boolean wasIme = imeShown;
         imeShown = ime > Ui.dpi(80);
         if (wasIme && !imeShown && !formatMode) input.setCursorVisible(false);
+        if (!wasIme && imeShown) input.setCursorVisible(true);
         padTop = top;
         int target = Math.max(bottom, ime);
         int cur = col.getPaddingBottom();
@@ -1023,6 +1082,15 @@ public class EditorScreen extends FrameLayout {
         locRow.setVisibility(VISIBLE);
     }
 
+    /** 切到后台时调用：收起键盘、放弃焦点，避免回到前台自动弹输入法 */
+    public void putAway() {
+        try {
+            hideIme();
+            input.clearFocus();
+            input.setCursorVisible(false);
+        } catch (Throwable ignored) { }
+    }
+
     public boolean close() {
         closed = true;
         try {
@@ -1056,6 +1124,12 @@ public class EditorScreen extends FrameLayout {
 
     @Override
     protected void onSizeChanged(int w, int h, int ow, int oh) {
+        post(new Runnable() {
+            @Override public void run() { fitText(); }
+        });
+        input.post(new Runnable() {
+            @Override public void run() { fitText(); }
+        });
         super.onSizeChanged(w, h, ow, oh);
         if (w > 0 && w != lastWidth) {
             lastWidth = w;
@@ -1063,6 +1137,52 @@ public class EditorScreen extends FrameLayout {
                 @Override public void run() { attachInlineSpans(); }
             });
         }
+    }
+
+    /** 小字号时：正文区正好 20 字一行、25 行一屏 */
+    /** 段落之间的空白行加高，形成明显分界（行间距不变） */
+    static class ParaSpace implements android.text.style.LineHeightSpan {
+        private final int extra;
+        ParaSpace(int extra) { this.extra = extra; }
+        @Override public void chooseHeight(CharSequence t, int start, int end,
+                                           int spanstartv, int v, Paint.FontMetricsInt fm) {
+            fm.ascent -= extra;
+            fm.descent += extra;
+            fm.top -= extra;
+            fm.bottom += extra;
+        }
+    }
+
+    private void applyParaSpacing() {
+        try {
+            Editable e = input.getText();
+            if (e == null) return;
+            ParaSpace[] old = e.getSpans(0, e.length(), ParaSpace.class);
+            for (ParaSpace o : old) e.removeSpan(o);
+            int extra = Ui.dpi(10);
+            for (int i = 1; i < e.length(); i++) {
+                if (e.charAt(i) == '\n' && e.charAt(i - 1) == '\n') {
+                    e.setSpan(new ParaSpace(extra), i, i + 1, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                }
+            }
+        } catch (Throwable ignored) { }
+    }
+
+    private void fitText() {
+        try {
+            if (Settings.fontLevel(getContext()) != 0) return;
+            int w = input.getWidth() - input.getPaddingLeft() - input.getPaddingRight();
+            int h = input.getHeight() - input.getPaddingTop() - input.getPaddingBottom();
+            if (w <= 0 || h <= 0) return;
+            // 同时满足：每行 20 字、每屏 25 行（行高约字号 1.18 倍）
+            float byWidth = w / 20f;
+            float byHeight = h / 25f / 1.18f;
+            float tsPx = Math.min(byWidth, byHeight);
+            float sp = tsPx / getResources().getDisplayMetrics().scaledDensity;
+            input.setTextSize(Math.max(10f, Math.min(18f, sp)));
+            input.setLineSpacing(Math.max(0f, h / 25f - tsPx * 1.18f), 1f);
+
+        } catch (Throwable ignored) { }
     }
 
     @Override
@@ -1240,7 +1360,7 @@ public class EditorScreen extends FrameLayout {
             if (flingAnim != null) flingAnim.cancel();
             final float total = -vy * 0.72f;   // 滑得更远
             ValueAnimator a = ValueAnimator.ofFloat(0f, 1f);
-            a.setDuration(1000);
+            a.setDuration(Math.min(1500, 780 + (int) (Math.abs(total) / 5f)));
             a.setInterpolator(new android.view.animation.DecelerateInterpolator(1.75f));
             a.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
                 private int done = 0;

@@ -12,7 +12,7 @@ import android.view.View;
 /** 自定义主题：用一条横向色带调节主色的明度 */
 public class BrightnessBar extends View {
 
-    public interface OnChange { void onColor(int color, float value); }
+    public interface OnChange { void onColor(int color, float value, boolean done); }
 
     private final Paint track = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint knob = new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -63,6 +63,7 @@ public class BrightnessBar extends View {
                 || e.getActionMasked() == MotionEvent.ACTION_MOVE) {
             value = Math.max(0f, Math.min(1f, e.getX() / Math.max(1, getWidth())));
             invalidate();
+            if (cb != null) cb.onColor(base, value, false);
             if (e.getActionMasked() == MotionEvent.ACTION_DOWN && getParent() != null) {
                 getParent().requestDisallowInterceptTouchEvent(true);
             }
@@ -70,7 +71,8 @@ public class BrightnessBar extends View {
         }
         if (e.getActionMasked() == MotionEvent.ACTION_UP
                 || e.getActionMasked() == MotionEvent.ACTION_CANCEL) {
-            if (cb != null) cb.onColor(base, value);   // 色相不变，只改明度
+            if (cb != null) cb.onColor(base, value, true);   // 色相不变，只改明度
+            if (getParent() != null) getParent().requestDisallowInterceptTouchEvent(false);
             return true;
         }
         return super.onTouchEvent(e);

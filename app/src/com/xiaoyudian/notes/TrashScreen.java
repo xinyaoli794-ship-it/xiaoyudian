@@ -32,6 +32,12 @@ public class TrashScreen extends FrameLayout {
     private final TextView clear;
     private final LinearLayout col;
 
+    private void say(String key) {
+        try {
+            android.widget.Toast.makeText(getContext(), Str.s(key), android.widget.Toast.LENGTH_SHORT).show();
+        } catch (Throwable ignored) { }
+    }
+
     public TrashScreen(Context c, Host host) {
         super(c);
         this.host = host;
@@ -228,6 +234,7 @@ public class TrashScreen extends FrameLayout {
             actions.addView(action(Str.s("restore"), 0xFFBFD0FF, new Runnable() {
                 @Override public void run() {
                     Db.get(getContext()).restore(n.id);
+        say("toast_restored");
                     reload();
                 }
             }));
@@ -236,6 +243,7 @@ public class TrashScreen extends FrameLayout {
             actions.addView(action(Str.s("delete_forever"), 0xFFFF9E9E, new Runnable() {
                 @Override public void run() {
                     Db.get(getContext()).purge(n.id);
+        say("toast_purged");
                     reload();
                 }
             }));

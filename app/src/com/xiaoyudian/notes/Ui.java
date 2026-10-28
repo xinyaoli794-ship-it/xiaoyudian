@@ -33,7 +33,7 @@ public final class Ui {
     /** 抽屉松手后的惯性判定速度（px/s） */
     public static final float DRAWER_FLING = 850f;
 
-    public static final String VERSION = "v1.0.0";
+    public static final String VERSION = "v1.0.1";
     public static int CUSTOM = 0;        // 自定义主色（色相），0 表示默认
     public static float CUSTOM_LEVEL = 0.55f;   // 自定义明度 0 浅 → 1 深
 

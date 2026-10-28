@@ -364,6 +364,17 @@ public class ListScreen extends FrameLayout implements NoteRow.Listener {
     }
 
     /** 从编辑页返回：只有内容真的变了才重排，否则完全不碰列表 */
+    public int firstVisiblePos() { return list.getFirstVisiblePosition(); }
+
+    public int firstVisibleOffset() {
+        View v = list.getChildAt(0);
+        return v == null ? 0 : v.getTop() - list.getPaddingTop();
+    }
+
+    public void restoreScroll(int pos, int offset) {
+        if (pos > 0 || offset != 0) list.setSelectionFromTop(Math.max(0, pos), offset);
+    }
+
     public void onBackFromEditor(boolean changed) {
         if (changed) reload(false);
     }
