@@ -445,6 +445,7 @@ public class EditorScreen extends FrameLayout {
         input.setOnTouchListener(new View.OnTouchListener() {
             private float y0;
             private boolean dragging;
+            private boolean checkHit;
 
             @Override public boolean onTouch(View v, MotionEvent e) {
                 switch (e.getActionMasked()) {
@@ -453,16 +454,22 @@ public class EditorScreen extends FrameLayout {
                         dragging = false;
                         int off = offsetAt(e.getX(), e.getY());
                         if (off >= 0 && isCheckboxAt(off)) {
+                            checkHit = true;          // 整段手势交给方框
                             toggleCheckboxChar(off);
                             return true;
                         }
                         return false;
                     }
                     case MotionEvent.ACTION_MOVE:
+                        if (checkHit) return true;    // 不让光标/键盘被唤起
                         if (Math.abs(e.getY() - y0) > Ui.dp(10)) dragging = true;
                         return false;
                     case MotionEvent.ACTION_UP:
                     case MotionEvent.ACTION_CANCEL:
+                        if (checkHit) {
+                            checkHit = false;
+                            return true;
+                        }
                         if (dragging) {
                             dragging = false;
                             // 滑动结束后再压一次输入法，避免滑动误唤起键盘
@@ -1090,6 +1097,11 @@ public class EditorScreen extends FrameLayout {
             input.setCursorVisible(false);
         } catch (Throwable ignored) { }
     }
+
+    /** 分享用：正文（含格式）与最后更新时间 */
+    public CharSequence shareBody() { return input.getText(); }
+
+    public long shareUpdatedAt() { return updatedAt; }
 
     public boolean close() {
         closed = true;

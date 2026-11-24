@@ -96,6 +96,10 @@ public final class Settings {
 
     public static void setLangChosen(Context c, boolean v) { p(c).edit().putBoolean("langChosen", v).apply(); }
 
+    public static int shareSize(Context c) { return p(c).getInt("shareSize", 1); }
+
+    public static void setShareSize(Context c, int v) { p(c).edit().putInt("shareSize", v).apply(); }
+
     public static int lang(Context c) {
         return p(c).getInt("lang", Str.ZH);
     }

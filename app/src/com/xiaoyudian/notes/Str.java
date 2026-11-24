@@ -183,6 +183,13 @@ public final class Str {
         p("toast_purged", "已彻底删除", "已徹底刪除", "Deleted permanently", "完全に削除しました", "완전히 삭제했습니다");
         p("toast_cleared", "已清空", "已清空", "Emptied", "空にしました", "비웠습니다");
         p("toast_auto_backup", "已自动备份", "已自動備份", "Auto backup done", "自動バックアップ完了", "자동 백업 완료");
+        p("share_image", "分享为图片", "分享為圖片", "Share as image", "画像として共有", "이미지로 공유");
+        p("copy_all", "复制全文", "複製全文", "Copy all text", "全文をコピー", "전체 복사");
+        p("share_size", "分享图字号", "分享圖字級", "Image text size", "画像の文字サイズ", "이미지 글자 크기");
+        p("size_std", "标准", "標準", "Standard", "標準", "보통");
+        p("size_large", "大", "大", "Large", "大", "크게");
+        p("size_xl", "特大", "特大", "Extra large", "特大", "아주 크게");
+        p("share_failed", "分享失败", "分享失敗", "Share failed", "共有に失敗しました", "공유 실패");
         p("back", "返回", "返回", "Back", "戻る", "뒤로");
         p("copied", "邮箱已复制", "信箱已複製", "Email copied", "メールをコピーしました", "이메일을 복사했습니다");
         p("current_version", "当前版本：", "目前版本：", "Version: ", "バージョン：", "버전: ");

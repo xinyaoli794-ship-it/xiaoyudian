@@ -445,13 +445,36 @@ public class MainActivity extends Activity implements ListScreen.Host, DrawerPan
     public void noteMenu(final Note n) {
         // 不在操作菜单里显示便签正文（只列动作）
         Sheet.menu(sheetLayer, null,
-                new String[]{n.pinned ? Str.s("unpin") : Str.s("pin"), Str.s("move_to_folder"), Str.s("copy_text"), Str.s("delete_note")},
+                new String[]{n.pinned ? Str.s("unpin") : Str.s("pin"), Str.s("move_to_folder"), Str.s("copy_text"), Str.s("share_image"), Str.s("delete_note")},
                 new Runnable[]{
                         new Runnable() { @Override public void run() { pin(n); } },
                         new Runnable() { @Override public void run() { move(n); } },
                         new Runnable() { @Override public void run() { copyText(n); } },
+                        new Runnable() { @Override public void run() { shareNote(n); } },
                         new Runnable() { @Override public void run() { delete(n); } }
                 });
+    }
+    /** 分享前选择图片字号（记住上次选择） */
+    private void askShareSize(final String title, final CharSequence body, final long updated) {
+        final String[] sizes = {Str.s("size_std"), Str.s("size_large"), Str.s("size_xl")};
+        Runnable[] acts = new Runnable[sizes.length];
+        for (int k = 0; k < sizes.length; k++) {
+            final int preset = k;
+            acts[k] = new Runnable() {
+                @Override public void run() {
+                    Settings.setShareSize(MainActivity.this, preset);
+                    Share.shareImage(MainActivity.this, title, body, updated, preset);
+                }
+            };
+        }
+        Sheet.menu(sheetLayer, Str.s("share_size"), sizes, acts,
+                Settings.shareSize(this));
+    }
+
+
+    /** 从列表分享图片：无富文本格式时按纯文本渲染 */
+    private void shareNote(Note n) {
+        askShareSize(n.title(), n.content == null ? "" : n.content, n.updated);
     }
 
     @Override
@@ -526,13 +549,22 @@ public class MainActivity extends Activity implements ListScreen.Host, DrawerPan
     @Override
     public void showMore(final EditorScreen s) {
         if (Db.get(this).note(s.noteId) == null) return;
+        Note n = Db.get(this).note(s.noteId);
+        final String title = n == null ? "" : n.title();
         Sheet.menu(sheetLayer, null,
-                new String[]{Str.s("pin_note"), Str.s("move_note"), Str.s("delete_note")},
+                new String[]{Str.s("copy_all"), Str.s("share_image"),
+                        Str.s("pin_note"), Str.s("move_note"), Str.s("delete_note")},
                 new Runnable[]{
+                        new Runnable() { @Override public void run() {
+                            Share.copyText(MainActivity.this, s.shareBody());
+                        } },
+                        new Runnable() { @Override public void run() {
+                            askShareSize(title, s.shareBody(), s.shareUpdatedAt());
+                        } },
                         new Runnable() { @Override public void run() { pinNote(s); } },
                         new Runnable() { @Override public void run() { moveNote(s); } },
                         new Runnable() { @Override public void run() { deleteNote(s); } }
-                }, 2);
+                }, 4);
     }
 
     @Override
